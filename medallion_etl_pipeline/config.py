@@ -24,7 +24,8 @@ class DatabaseConfig:
     
     @property
     def sqlalchemy_url(self) -> str:
-        return f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}"
+        # Use postgresql+psycopg for psycopg3 (Python 3.13 compatible)
+        return f"postgresql+psycopg://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}"
 
 
 @dataclass
@@ -54,25 +55,59 @@ class SparkConfig:
         }
 
 
+# @dataclass
+# class PathConfig:
+#     """File system path configuration"""
+#     base_input_path: str = r"C:\pharma_warehouse\medallion_etl_pipeline\data\input"
+#     base_output_path: str = r"C:\pharma_warehouse\medallion_etl_pipeline\data\lakehouse"
+#     checkpoint_path: str = r"C:\pharma_warehouse\medallion_etl_pipeline\checkpoints"
+#     temp_path: str = r"C:\pharma_warehouse\medallion_etl_pipeline\temp"
+    
+#     @property
+#     def bronze_path(self) -> str:
+#         return str(Path(self.base_output_path) / "bronze")
+    
+#     @property
+#     def silver_path(self) -> str:
+#         return str(Path(self.base_output_path) / "silver")
+    
+#     @property
+#     def gold_path(self) -> str:
+#         return str(Path(self.base_output_path) / "gold")
+
+# Update your config.py - modify the PathConfig class:
+
 @dataclass
 class PathConfig:
     """File system path configuration"""
-    base_input_path: str = r"C:\etl\data\input"
-    base_output_path: str = r"C:\etl\data\lakehouse"
-    checkpoint_path: str = r"C:\etl\checkpoints"
-    temp_path: str = r"C:\etl\temp"
+    # Use raw strings and ensure paths exist
+    base_input_path: str = r"C:\pharma_warehouse\medallion_etl_pipeline\data\input"
+    base_output_path: str = r"C:\pharma_warehouse\medallion_etl_pipeline\data\lakehouse"
+    checkpoint_path: str = r"C:\pharma_warehouse\medallion_etl_pipeline\checkpoints"
+    temp_path: str = r"C:\pharma_warehouse\medallion_etl_pipeline\temp"
+    
+    def __post_init__(self):
+        # Ensure all directories exist
+        for path in [self.base_input_path, self.base_output_path, self.checkpoint_path, self.temp_path]:
+            Path(path).mkdir(parents=True, exist_ok=True)
     
     @property
     def bronze_path(self) -> str:
-        return str(Path(self.base_output_path) / "bronze")
+        path = Path(self.base_output_path) / "bronze"
+        path.mkdir(parents=True, exist_ok=True)
+        return str(path)
     
     @property
     def silver_path(self) -> str:
-        return str(Path(self.base_output_path) / "silver")
+        path = Path(self.base_output_path) / "silver"
+        path.mkdir(parents=True, exist_ok=True)
+        return str(path)
     
     @property
     def gold_path(self) -> str:
-        return str(Path(self.base_output_path) / "gold")
+        path = Path(self.base_output_path) / "gold"
+        path.mkdir(parents=True, exist_ok=True)
+        return str(path)
     
     def get_bronze_table_path(self, table_name: str) -> str:
         return str(Path(self.bronze_path) / table_name)

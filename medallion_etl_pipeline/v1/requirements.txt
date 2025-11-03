@@ -1,0 +1,23 @@
+# PySpark and Delta Lake
+pyspark==3.4.1
+delta-spark==2.4.0
+
+# Prefect orchestration
+prefect==2.14.0
+prefect-dask==0.2.5
+
+# Database connectivity
+sqlalchemy==2.0.23
+psycopg2-binary==2.9.9
+pandas==2.1.3
+
+# Excel processing
+openpyxl==3.1.2
+xlrd==2.0.1
+
+# Data quality and validation
+great-expectations==0.18.8
+
+# Utilities
+python-dotenv==1.0.0
+pyyaml==6.0.1

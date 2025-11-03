@@ -200,6 +200,7 @@ class BronzeLayerProcessor:
             for col in df.columns
         ]
         
+        # TODO: Check what this does in original code
         # Handle duplicate column names
         cols = pd.Series(df.columns)
         for dup in cols[cols.duplicated()].unique():

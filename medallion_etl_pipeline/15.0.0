@@ -1,0 +1,5 @@
+Collecting pyarrow
+  Using cached pyarrow-22.0.0-cp313-cp313-win_amd64.whl.metadata (3.3 kB)
+Using cached pyarrow-22.0.0-cp313-cp313-win_amd64.whl (28.0 MB)
+Installing collected packages: pyarrow
+Successfully installed pyarrow-22.0.0

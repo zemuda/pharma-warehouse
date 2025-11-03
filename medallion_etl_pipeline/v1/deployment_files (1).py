@@ -1,31 +1,35 @@
 # requirements.txt
 """
 Python dependencies for the Medallion Architecture Pipeline
+Compatible with Python 3.11, 3.12, 3.13
 """
 
 # PySpark and Delta Lake
-pyspark==3.4.1
-delta-spark==2.4.0
+pyspark==3.5.0
+delta-spark==3.0.0
 
 # Prefect orchestration
-prefect==2.14.0
-prefect-dask==0.2.5
+prefect==2.14.21
+prefect-dask==0.2.7
 
 # Database connectivity
-sqlalchemy==2.0.23
+sqlalchemy==2.0.25
 psycopg2-binary==2.9.9
-pandas==2.1.3
+pandas==2.2.0  # Compatible with Python 3.13
 
 # Excel processing
 openpyxl==3.1.2
 xlrd==2.0.1
 
-# Data quality and validation
-great-expectations==0.18.8
+# Data quality and validation (optional - can be heavy)
+# great-expectations==0.18.12
 
 # Utilities
 python-dotenv==1.0.0
 pyyaml==6.0.1
+
+# Additional dependencies for Python 3.13
+numpy>=1.26.0  # Required for pandas 2.2.0
 
 
 # =================================================================
@@ -46,11 +50,11 @@ pip install --upgrade pip
 pip install -r requirements.txt
 
 # Create directory structure
-mkdir -p C:/etl/data/input
-mkdir -p C:/etl/data/lakehouse/{bronze,silver,gold}
-mkdir -p C:/etl/checkpoints
-mkdir -p C:/etl/temp
-mkdir -p C:/etl/logs
+mkdir -p C:/pharma_warehouse/medallion_etl_pipeline/data/input
+mkdir -p C:/pharma_warehouse/medallion_etl_pipeline/data/lakehouse/{bronze,silver,gold}
+mkdir -p C:/pharma_warehouse/medallion_etl_pipeline/checkpoints
+mkdir -p C:/pharma_warehouse/medallion_etl_pipeline/temp
+mkdir -p C:/pharma_warehouse/medallion_etl_pipeline/logs
 
 # Set environment variables
 export POSTGRES_HOST=localhost
@@ -80,13 +84,13 @@ REM Install dependencies
 pip install -r requirements.txt
 
 REM Create directory structure
-mkdir C:\etl\data\input 2>nul
-mkdir C:\etl\data\lakehouse\bronze 2>nul
-mkdir C:\etl\data\lakehouse\silver 2>nul
-mkdir C:\etl\data\lakehouse\gold 2>nul
-mkdir C:\etl\checkpoints 2>nul
-mkdir C:\etl\temp 2>nul
-mkdir C:\etl\logs 2>nul
+mkdir C:\pharma_warehouse\medallion_etl_pipeline\data\input 2>nul
+mkdir C:\pharma_warehouse\medallion_etl_pipeline\data\lakehouse\bronze 2>nul
+mkdir C:\pharma_warehouse\medallion_etl_pipeline\data\lakehouse\silver 2>nul
+mkdir C:\pharma_warehouse\medallion_etl_pipeline\data\lakehouse\gold 2>nul
+mkdir C:\pharma_warehouse\medallion_etl_pipeline\checkpoints 2>nul
+mkdir C:\pharma_warehouse\medallion_etl_pipeline\temp 2>nul
+mkdir C:\pharma_warehouse\medallion_etl_pipeline\logs 2>nul
 
 REM Set environment variables
 setx POSTGRES_HOST localhost
@@ -180,10 +184,10 @@ SPARK_DRIVER_MEMORY=4g
 SPARK_EXECUTOR_MEMORY=4g
 
 # Pipeline Paths
-ETL_INPUT_PATH=C:/etl/data/input
-ETL_OUTPUT_PATH=C:/etl/data/lakehouse
-ETL_CHECKPOINT_PATH=C:/etl/checkpoints
-ETL_TEMP_PATH=C:/etl/temp
+ETL_INPUT_PATH=C:/pharma_warehouse/medallion_etl_pipeline/data/input
+ETL_OUTPUT_PATH=C:/pharma_warehouse/medallion_etl_pipeline/data/lakehouse
+ETL_CHECKPOINT_PATH=C:/pharma_warehouse/medallion_etl_pipeline/checkpoints
+ETL_TEMP_PATH=C:/pharma_warehouse/medallion_etl_pipeline/temp
 
 # Prefect Configuration
 PREFECT_API_URL=http://localhost:4200/api
@@ -214,7 +218,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('C:/etl/logs/pipeline.log'),
+        logging.FileHandler('C:/pharma_warehouse/medallion_etl_pipeline/logs/pipeline.log'),
         logging.StreamHandler(sys.stdout)
     ]
 )

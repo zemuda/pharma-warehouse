@@ -1,0 +1,36 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: etl_metadata_db
+    environment:
+      POSTGRES_DB: etl_metadata
+      POSTGRES_USER: etl_user
+      POSTGRES_PASSWORD: etl_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U etl_user -d etl_metadata"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  prefect-server:
+    image: prefecthq/prefect:2.14.0-python3.11
+    container_name: prefect_server
+    command: prefect server start
+    environment:
+      PREFECT_API_URL: http://prefect-server:4200/api
+      PREFECT_SERVER_API_HOST: 0.0.0.0
+    ports:
+      - "4200:4200"
+    depends_on:
+      - postgres
+    volumes:
+      - prefect_data:/root/.prefect
+
+volumes:
+  postgres_data:
+  prefect_data:

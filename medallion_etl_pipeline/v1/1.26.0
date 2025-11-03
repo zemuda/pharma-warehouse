@@ -1,0 +1,6 @@
+Collecting numpy
+  Using cached numpy-2.3.4-cp313-cp313-win_amd64.whl.metadata (60 kB)
+Downloading numpy-2.3.4-cp313-cp313-win_amd64.whl (12.8 MB)
+   ---------------------------------------- 12.8/12.8 MB 3.6 MB/s  0:00:03
+Installing collected packages: numpy
+Successfully installed numpy-2.3.4

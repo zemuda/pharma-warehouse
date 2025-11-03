@@ -268,7 +268,7 @@ ORDER BY operation_timestamp DESC;
 
 ### Input Structure
 ```
-C:/etl/data/input/
+C:/pharma_warehouse/medallion_etl_pipeline/data/input/
 ├── sales/
 │   ├── cash_invoices/
 │   │   ├── detailed/
@@ -288,7 +288,7 @@ C:/etl/data/input/
 
 ### Output Structure (Delta Lake)
 ```
-C:/etl/data/lakehouse/
+C:/pharma_warehouse/medallion_etl_pipeline/data/lakehouse/
 ├── bronze/
 │   ├── bronze_sales_cash_invoices_detailed_sheet1/
 │   ├── bronze_sales_cash_invoices_summarized_sheet1/
@@ -423,7 +423,7 @@ docker-compose restart postgres
 **3. Delta Lake Write Errors**
 ```bash
 # Clear checkpoints
-rm -rf C:/etl/checkpoints/*
+rm -rf C:/pharma_warehouse/medallion_etl_pipeline/checkpoints/*
 
 # Vacuum old files
 spark.sql("VACUUM delta.`path/to/table` RETAIN 168 HOURS")

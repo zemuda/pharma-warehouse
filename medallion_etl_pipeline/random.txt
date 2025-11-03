@@ -1,0 +1,18 @@
+# Create input directory structure
+New-Item -ItemType Directory -Force -Path "C:\pharma_warehouse\medallion_etl_pipeline\data\input\sales\cash_invoices\detailed\2025\january"
+New-Item -ItemType Directory -Force -Path "C:\pharma_warehouse\medallion_etl_pipeline\data\input\sales\cash_invoices\summarized\2025\january"
+New-Item -ItemType Directory -Force -Path "C:\pharma_warehouse\medallion_etl_pipeline\data\input\sales\cash_sales\detailed\2025\january"
+New-Item -ItemType Directory -Force -Path "C:\pharma_warehouse\medallion_etl_pipeline\data\input\sales\cash_sales\summarized\2025\january"
+New-Item -ItemType Directory -Force -Path "C:\pharma_warehouse\medallion_etl_pipeline\data\input\sales\credit_notes\detailed\2025\january"
+New-Item -ItemType Directory -Force -Path "C:\pharma_warehouse\medallion_etl_pipeline\data\input\sales\credit_notes\summarized\2025\january"
+
+# Create output directories
+New-Item -ItemType Directory -Force -Path "C:\pharma_warehouse\medallion_etl_pipeline\data\lakehouse\bronze"
+New-Item -ItemType Directory -Force -Path "C:\pharma_warehouse\medallion_etl_pipeline\data\lakehouse\silver"
+New-Item -ItemType Directory -Force -Path "C:\pharma_warehouse\medallion_etl_pipeline\data\lakehouse\gold"
+New-Item -ItemType Directory -Force -Path "C:\pharma_warehouse\medallion_etl_pipeline\checkpoints"
+New-Item -ItemType Directory -Force -Path "C:\pharma_warehouse\medallion_etl_pipeline\logs"
+medallion_etl_pipeline\data\input\sales\cash_invoices\detailed\2025\january
+C:\pharma_warehouse\medallion_etl_pipeline\data\input\sales\cash_invoices\detailed\2025\january
+C:\pharma_warehouse\medallion_etl_pipeline
+.\venv\Scripts\Activate.ps1
