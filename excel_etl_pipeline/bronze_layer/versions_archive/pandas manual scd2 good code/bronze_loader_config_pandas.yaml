@@ -1,0 +1,149 @@
+# bronze_loader_config_pandas.yaml
+# Enhanced Bronze Layer Configuration for Pandas Version
+
+# ==============================================================================
+# PATHS CONFIGURATION
+# ==============================================================================
+paths:
+  bronze_base_path: "C:/pharma_warehouse/excel_etl_pipeline/bronze_layer/bronze_data/bronze"
+  source_data_path: "C:/pharma_warehouse/excel_etl_pipeline/raw_layer/raw_data/output"
+  log_directory: "C:/pharma_warehouse/excel_etl_pipeline/bronze_layer/bronze_data/logs"
+  checkpoint_directory: "C:/pharma_warehouse/excel_etl_pipeline/bronze_layer/bronze_data/checkpoints"
+
+# ==============================================================================
+# POSTGRESQL CONFIGURATION (Optional)
+# ==============================================================================
+postgresql:
+  host: "localhost"
+  port: 5432
+  database: "pharma_warehouse"
+  user: "postgres"
+  password: "1234"
+  schema: "bronze_layer"
+  connection_pool_size: 5
+  connection_timeout: 30
+
+# ==============================================================================
+# DATA SOURCES CONFIGURATION
+# ==============================================================================
+data_sources:
+  features:
+    - name: "sales"
+      enabled: true
+      subfeatures:
+        - name: "cash_invoices"
+          enabled: true
+          data_types:
+            - name: "detailed"
+              enabled: true
+              path: "sales/cash_invoices/detailed"
+              primary_keys: ["DOCUMENT_NUMBER", "CUS_CODE", "ITEM_CODE"]
+              enable_scd2: true
+              # Performance tuning for pandas
+              chunk_size: 50000  # Process in chunks for large files
+              dtype_optimization: true
+              
+            - name: "summarized"
+              enabled: true
+              path: "sales/cash_invoices/summarized"
+              primary_keys: ["DOCUMENT_NUMBER"]
+              enable_scd2: true
+
+    - name: "master_data"
+      enabled: true
+      subfeatures:
+        - name: "customer_accounts"
+          enabled: true
+          data_types:
+            - name: "all_branches"
+              enabled: true
+              path: "master_data/customer_accounts/all_branches"
+              primary_keys: ["CORP_CODE"]
+              enable_scd2: true
+
+# ==============================================================================
+# PANDAS-SPECIFIC SETTINGS
+# ==============================================================================
+pandas_settings:
+  memory_efficient: true
+  use_chunks: true
+  default_chunk_size: 50000
+  dtype_optimization: true
+  string_dtype: "object"  # or "string" for pandas 1.0+
+  datetime_format: "mixed"  # "mixed", "iso", "epoch"
+  
+  # Memory management
+  max_memory_usage_mb: 2048  # Limit memory usage
+  spill_to_disk_threshold_mb: 1024
+  
+  # Performance
+  use_modin: false  # Set to true if modin is installed
+  use_dask: false   # Set to true if dask is installed
+
+# ==============================================================================
+# FEATURE FLAGS
+# ==============================================================================
+features:
+  enable_scd2: true
+  enable_quality_columns: true
+  enable_validation: false
+  enable_incremental_loading: true
+  enable_schema_evolution: true
+  enable_cross_validation: true
+  
+  # Pandas-specific features
+  enable_memory_monitoring: true
+  enable_progress_bar: true
+  enable_chunked_processing: true
+
+# ==============================================================================
+# VALIDATION RULES
+# ==============================================================================
+validation_rules:
+  global:
+    - rule_type: "null_check"
+      columns: ["_source_file_path", "_source_file_name"]
+      max_null_percentage: 0.0
+      severity: "error"
+    - rule_type: "range_check"
+      columns: ["AMOUNT"]
+      min_value: 0
+      severity: "warning"
+
+  master_data:
+    customer_accounts:
+      - rule_type: "null_check"
+        columns: ["CORP_CODE", "CORP__NAME", "CORP_TYPE"]
+        max_null_percentage: 1.0
+        severity: "error"
+      - rule_type: "domain_check"
+        columns: ["CORP_TYPE"]
+        allowed_values: ["PHARMACY", "HOSPITALS", "CLINIC", "OTHER"]
+        severity: "warning"
+
+# ==============================================================================
+# LOGGING CONFIGURATION
+# ==============================================================================
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file:
+    enabled: true
+    filename: "bronze_loader_pandas.log"
+    max_bytes: 10485760
+    backup_count: 5
+
+# ==============================================================================
+# DELTA LAKE SETTINGS
+# ==============================================================================
+delta_lake:
+  mode: "append"  # or "overwrite", "ignore", "error"
+  schema_mode: "merge"
+  engine: "pyarrow"
+  compression: "snappy"
+  index: false
+  
+  # Performance
+  max_partition_bytes: 134217728  # 128MB
+  min_rows_per_group: 10000
+  max_rows_per_group: 100000

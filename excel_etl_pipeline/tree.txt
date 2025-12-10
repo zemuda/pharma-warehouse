@@ -1,0 +1,58 @@
+(venv) PS C:\pharma_warehouse\etl_pipeline> Get-ChildItem -Recurse | Tree
+Folder PATH listing
+Volume serial number is 74BF-0BDD
+C:.
+├───bronze_layer
+│   ├───notes
+│   ├───v1
+│   ├───bronze_loader_config.yaml
+│   └───bronze_loader_standalone.py
+├───excel_pipeline
+│   ├───bronze_data
+│   │   ├───bronze
+│   │   │   └───tables
+│   │   ├───checkpoints
+│   │   ├───dead_letter_queue
+│   │   ├───logs
+│   │   ├───quarantine
+│   │   ├───reports
+│   │   └───spark-warehouse
+│   ├───checkpoints
+│   ├───data
+│   │   ├───input
+│   │   │   └───sales
+│   │   │       └───cash_invoices
+│   │   │           ├───detailed
+│   │   │           │   └───2025
+│   │   │           │       └───01
+│   │   │           └───summarized
+│   │   │               └───2025
+│   │   │                   ├───01
+│   │   │                   └───02
+│   │   ├───logs
+│   │   └───output
+│   │       ├───inventory
+│   │       ├───master_data
+│   │       ├───purchases
+│   │       └───sales
+│   │           └───cash_invoices
+│   │               ├───detailed
+│   │               │   └───2025
+│   │               │       └───01
+│   │               └───summarized
+│   │                   └───2025
+│   │                       ├───01
+│   │                       └───02
+│   ├───logs
+│   ├───state
+│   └───temp
+├───pyspark
+├───raw_layer
+│   ├───db
+│   ├───notes
+│   ├───scripts
+│   └───__pycache__
+├───setup
+│   ├───environments
+│   └───notes
+└───venv

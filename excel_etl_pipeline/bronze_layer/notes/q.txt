@@ -1,0 +1,12 @@
+# Create all required directories
+$baseDir = "C:\pharma_warehouse\etl_pipeline\excel_pipeline\bronze_data"
+
+New-Item -ItemType Directory -Force -Path "$baseDir\bronze\tables"
+New-Item -ItemType Directory -Force -Path "$baseDir\logs"
+New-Item -ItemType Directory -Force -Path "$baseDir\checkpoints"
+New-Item -ItemType Directory -Force -Path "$baseDir\quarantine"
+New-Item -ItemType Directory -Force -Path "$baseDir\dead_letter_queue"
+New-Item -ItemType Directory -Force -Path "$baseDir\spark-warehouse"
+New-Item -ItemType Directory -Force -Path "$baseDir\reports"
+
+Write-Host "✅ All directories created successfully!" -ForegroundColor Green

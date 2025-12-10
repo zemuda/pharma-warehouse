@@ -1,0 +1,77 @@
+# column_mapping.yaml
+# Comprehensive column standardization mapping
+
+invoice_header:
+  DOCUMENT_NUMBER: invoice_number
+  TRN_YEAR: transaction_year
+  TRN_MONTH: transaction_month
+  TRN_DATE: transaction_date
+  AMOUNT: total_amount
+  CUS_CODE: customer_code
+  COMMENTS: transaction_comments
+  CUSTOMER_NAME: customer_name
+  VAT: tax_amount
+  DISC: discount_amount
+  BCODE: branch_code
+  USERNAME: processed_by_user
+  AMOUNT_INCLUSIVE: amount_including_tax
+  AMOUNT_EXCLUSIVE: amount_excluding_tax
+  TELEPHONE: contact_telephone
+  EMAIL: contact_email
+  COMPANY: company_name
+  ADDRESS: company_address
+  MPESA_TILL: payment_method_reference
+  BRANCH_NAME: branch_name
+
+invoice_detail:
+  DOCUMENT_NUMBER: invoice_number
+  ITEM_CODE: product_code
+  DESCRIPTION: product_description
+  QUANTITY: quantity_sold
+  ITEM_PRICE: unit_price
+  AMOUNT_VALUE: line_total_amount
+  TAX_AMOUNT: line_tax_amount
+  DISCOUNT: line_discount_amount
+  DISCOUNT_PERCENT: line_discount_percentage
+  AMT_EXCL: line_amount_excluding_tax
+  BONUS: bonus_quantity
+  ITEM_PRICES: unit_price_per_piece
+  PWQTY: pack_wholesale_quantity
+  PW: pack_wholesale_indicator
+  TRN_TYPE: transaction_type
+  TRN_DATE: transaction_date
+  CUS_CODE: customer_code
+  CUSTOMER_NAME: customer_name
+  BCODE: branch_code
+  USERNAME: processed_by_user
+  BRANCH_NAME: branch_name
+
+credit_note_header:
+  DOCUMENT_NUMBER: credit_note_number
+  AMOUNT: credit_amount
+  ORIGINAL_INVOICE: original_invoice_number
+  REASON_CODE: credit_reason_code
+  REASON_DESCRIPTION: credit_reason_description
+  APPROVED_BY: approved_by_user
+  APPROVAL_DATE: approval_date
+  REFUND_METHOD: refund_method
+  REFUND_STATUS: refund_status
+  TRN_DATE: transaction_date
+  CUS_CODE: customer_code
+  CUSTOMER_NAME: customer_name
+  BCODE: branch_code
+  USERNAME: processed_by_user
+
+credit_note_detail:
+  DOCUMENT_NUMBER: credit_note_number
+  ITEM_CODE: product_code
+  DESCRIPTION: product_description
+  QUANTITY: quantity_returned
+  ITEM_PRICE: unit_price
+  AMOUNT_VALUE: line_credit_amount
+  ORIGINAL_INVOICE: original_invoice_number
+  REASON: return_reason
+  RETURN_TO_STOCK: return_to_stock_flag
+  CONDITION: product_condition
+  TRN_DATE: transaction_date
+  CUS_CODE: customer_code

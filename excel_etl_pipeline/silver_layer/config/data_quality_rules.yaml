@@ -1,0 +1,75 @@
+# data_quality_rules.yaml
+validation_rules:
+  invoice_header:
+    required_fields:
+      - invoice_number
+      - transaction_date
+      - total_amount
+      - customer_code
+      - customer_name
+    
+    business_rules:
+      - rule: "total_amount > 0"
+        severity: "HIGH"
+        message: "Invoice amounts must be positive"
+      
+      - rule: "transaction_date <= current_date()"
+        severity: "HIGH"
+        message: "Transaction date cannot be in the future"
+      
+      - rule: "amount_including_tax >= amount_excluding_tax"
+        severity: "MEDIUM"
+        message: "Amount including tax should be >= amount excluding tax"
+    
+    unique_keys:
+      - invoice_number
+  
+  invoice_detail:
+    required_fields:
+      - invoice_number
+      - product_code
+      - quantity_sold
+      - unit_price
+      - line_total_amount
+    
+    business_rules:
+      - rule: "quantity_sold > 0"
+        severity: "HIGH"
+        message: "Quantity must be positive"
+      
+      - rule: "unit_price > 0"
+        severity: "HIGH"
+        message: "Unit price must be positive"
+      
+      - rule: "abs((quantity_sold * unit_price) - line_total_amount) < 0.01"
+        severity: "MEDIUM"
+        message: "Line total calculation mismatch"
+    
+    foreign_keys:
+      - column: "invoice_number"
+        references: "invoice_header.invoice_number"
+  
+  credit_note_header:
+    required_fields:
+      - credit_note_number
+      - credit_amount
+      - original_invoice_number
+      - transaction_date
+      - customer_code
+    
+    business_rules:
+      - rule: "credit_amount < 0"
+        severity: "CRITICAL"
+        message: "Credit note amounts must be negative"
+      
+      - rule: "original_invoice_number IS NOT NULL"
+        severity: "HIGH"
+        message: "Credit notes must reference original invoice"
+      
+      - rule: "approved_by_user IS NOT NULL"
+        severity: "HIGH"
+        message: "Credit notes require approval"
+    
+    foreign_keys:
+      - column: "original_invoice_number"
+        references: "invoice_header.invoice_number"

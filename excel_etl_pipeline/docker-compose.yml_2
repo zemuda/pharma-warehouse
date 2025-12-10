@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: excel_pipeline
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init_database.sql:/docker-entrypoint-initdb.d/init_database.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  pipeline:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: excel_pipeline
+      DB_USER: postgres
+      DB_PASSWORD: password
+      WATCH_DIR: /app/data/input
+    volumes:
+      - ./raw_data/input:/app/data/input
+      - ./raw_data/output:/app/data/output
+      - ./excel_pipeline/state:/app/state
+      - ./excel_pipeline/logs:/app/logs
+    command: python file_watcher.py
+
+volumes:
+  postgres_data:

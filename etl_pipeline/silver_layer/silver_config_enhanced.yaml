@@ -1,0 +1,513 @@
+# silver_config_enhanced.yaml
+# Enhanced Silver Layer Configuration for Delta Lake Processing
+# Compatible with silver_layer_transformer_delta_enhanced.py
+
+# ==============================================================================
+# DATABASE CONFIGURATION
+# ==============================================================================
+database:
+  host: "localhost"
+  port: "5432"
+  database: "pharma_warehouse"
+  user: "postgres"
+  password: "1234"
+  schema: "silver_layer"
+  # Connection pool settings
+  pool_size: 10
+  max_overflow: 20
+  pool_timeout: 30
+  pool_recycle: 3600
+
+# ==============================================================================
+# PATHS CONFIGURATION
+# ==============================================================================
+paths:
+  # Bronze layer Delta tables (source)
+  bronze_base: "C:/pharma_warehouse/etl_pipeline/excel_pipeline/bronze_data/bronze/tables"
+  
+  # Silver layer output paths
+  silver_base: "C:/pharma_warehouse/etl_pipeline/excel_pipeline/silver_data"
+  
+  # Supporting directories
+  log_directory: "C:/pharma_warehouse/etl_pipeline/excel_pipeline/silver_data/logs"
+  checkpoint_directory: "C:/pharma_warehouse/etl_pipeline/excel_pipeline/silver_data/checkpoints"
+  backup_directory: "C:/pharma_warehouse/etl_pipeline/excel_pipeline/silver_data/backups"
+
+# ==============================================================================
+# DATA SOURCES CONFIGURATION
+# ==============================================================================
+data_sources:
+  sales:
+    cash_invoices:
+      summarized:
+        enabled: true
+        bronze_delta_table: "bronze_sales_cash_invoices_summarized"
+        silver_table: "silver_layer.summarized_cash_invoices"
+        credit_notes_table: "silver_layer.generated_summarized_cash_invoices_credit_notes"
+        primary_keys: ["DOCUMENT_NUMBER", "CUS_CODE", "TRN_DATE", "AMOUNT"]
+        duplicate_detection_keys: ["DOCUMENT_NUMBER", "CUS_CODE", "TRN_DATE", "AMOUNT"]
+        business_calculations:
+          - "stg_vat_calculated"
+          - "stg_discount_percentage"
+        data_quality_flags:
+          - "amount_invalid_flag"
+          - "date_invalid_flag"
+          - "customer_missing_flag"
+          - "is_credit_note"
+        
+      detailed:
+        enabled: true
+        bronze_delta_table: "bronze_sales_cash_invoices_detailed"
+        silver_table: "silver_layer.detailed_cash_invoices"
+        credit_notes_table: "silver_layer.generated_detailed_cash_invoices_credit_notes"
+        primary_keys: ["DOCUMENT_NUMBER", "ITEM_CODE", "TRN_DATE"]
+        duplicate_detection_keys: ["DOCUMENT_NUMBER", "ITEM_CODE", "TRN_DATE", "AMOUNT"]
+        business_calculations:
+          - "calculated_line_total"
+          - "effective_amount"
+          - "line_discounted_product_unit_price"
+          - "net_line_amount"
+        data_quality_flags:
+          - "amount_invalid_flag"
+          - "date_invalid_flag"
+          - "customer_missing_flag"
+          - "quantity_invalid_flag"
+          - "price_invalid_flag"
+          - "is_credit_note"
+          - "potential_duplicate_flag"
+
+# ==============================================================================
+# ENHANCED FEATURE FLAGS
+# ==============================================================================
+features:
+  # Core processing features
+  enable_incremental_loading: true
+  enable_delta_versioning: true
+  enable_schema_evolution: true
+  enable_original_data_preservation: true
+  
+  # Enhanced business logic features
+  enable_business_calculations: true
+  enable_advanced_metrics: true
+  enable_calculated_field_validation: true
+  
+  # Data quality features
+  enable_data_quality_checks: true
+  enable_whitespace_detection: true
+  enable_duplicate_detection: true
+  enable_credit_note_separation: true
+  enable_per_record_duplicate_flags: true
+  
+  # Monitoring and logging
+  enable_process_logging: true
+  enable_quality_logging: true
+  enable_checkpoint_tracking: true
+  enable_enhanced_metrics_logging: true
+
+# ==============================================================================
+# ENHANCED DATA QUALITY RULES
+# ==============================================================================
+data_quality_rules:
+  # Whitespace detection
+  whitespace_checks:
+    enabled: true
+    log_sample_size: 5
+    preserve_original_data: true
+    
+  # Enhanced duplicate detection (per-record and aggregate)
+  duplicate_detection:
+    enabled: true
+    action: "log_and_flag"  # Preserve all transactions, log and flag for review
+    log_to_database: true
+    enable_per_record_flags: true
+    key_columns:
+      summarized: ["DOCUMENT_NUMBER", "CUS_CODE", "TRN_DATE", "AMOUNT"]
+      detailed: ["DOCUMENT_NUMBER", "ITEM_CODE", "TRN_DATE", "AMOUNT"]
+    
+  # Credit notes separation with enhanced tracking
+  credit_notes:
+    enabled: true
+    detection_rules:
+      - type: "prefix"
+        column: "DOCUMENT_NUMBER"
+        pattern: "^CN"
+      - type: "amount"
+        column: "AMOUNT"
+        condition: "<=0"
+    separate_table: true
+    enable_calculated_totals: true
+    
+  # Enhanced null value checks
+  null_checks:
+    enabled: true
+    critical_columns:
+      - "DOCUMENT_NUMBER"
+      - "TRN_DATE"
+      - "AMOUNT"
+      - "CUS_CODE"
+    non_critical_columns:
+      - "CUSTOMER_NAME"
+      - "BRANCH_NAME"
+      - "USERNAME"
+      
+  # Business logic validation
+  business_validation:
+    enabled: true
+    rules:
+      - name: "vat_calculation_validation"
+        description: "Validate calculated VAT matches expected values"
+        tolerance: 0.01  # 1% tolerance
+      - name: "discount_percentage_validation"
+        description: "Validate discount percentages are within reasonable range"
+        min_value: 0
+        max_value: 100
+      - name: "line_total_validation"
+        description: "Validate line total calculations"
+        enabled: true
+
+# ==============================================================================
+# ENHANCED TRANSFORMATION RULES
+# ==============================================================================
+transformation_rules:
+  # String cleaning with preservation
+  string_cleaning:
+    trim_whitespace: true
+    preserve_original: true
+    create_cleaned_columns: true
+    
+  # Enhanced numeric conversions
+  numeric_conversions:
+    AMOUNT: "amount_numeric"
+    AMOUNT_INCLUSIVE: "amount_inclusive_numeric"
+    AMOUNT_EXCLUSIVE: "amount_exclusive_numeric"
+    VAT: "vat_numeric"
+    DISC: "discount_numeric"
+    strict_mode: false  # Continue on conversion errors
+    
+  # Enhanced date parsing
+  date_parsing:
+    source_column: "TRN_DATE"
+    output_columns:
+      - "transaction_date"  # Date type
+      - "transaction_year"  # Year extraction
+      - "transaction_month" # Month extraction
+      - "transaction_time"  # Time extraction
+    fallback_date: "1900-01-01"
+    
+  # Enhanced document type classification
+  document_classification:
+    rules:
+      - condition: "starts_with_CN_or_amount_lte_0"
+        type: "CREDIT_NOTE"
+        flag_column: "is_credit_note"
+      - condition: "amount_gt_0"
+        type: "CASH_INVOICE"
+        flag_column: "is_credit_note"
+        
+  # Enhanced business calculations
+  business_calculations:
+    summarized:
+      - name: "stg_vat_calculated"
+        formula: "amount_inclusive_numeric - amount_exclusive_numeric"
+        description: "Calculated VAT amount"
+      - name: "stg_discount_percentage"
+        formula: "(discount_numeric / amount_exclusive_numeric) * 100"
+        conditions: "amount_exclusive_numeric > 0"
+        default_value: 0
+        description: "Discount percentage"
+        
+    detailed:
+      - name: "calculated_line_total"
+        formula: "QUANTITY * ITEM_PRICE"
+        description: "Calculated line total"
+      - name: "effective_amount"
+        formula: "CASE WHEN QUANTITY > 0 AND ITEM_PRICE > 0 THEN QUANTITY * ITEM_PRICE ELSE amount_numeric END"
+        description: "Effective amount (calculated or raw)"
+      - name: "line_discounted_product_unit_price"
+        formula: "ITEM_PRICE * (1 - COALESCE(DISCOUNT_PERCENT, 0) / 100)"
+        description: "Discounted unit price"
+      - name: "net_line_amount"
+        formula: "QUANTITY * ITEM_PRICE * (1 - COALESCE(DISCOUNT_PERCENT, 0) / 100)"
+        description: "Net line amount after discount"
+
+# ==============================================================================
+# ENHANCED INCREMENTAL PROCESSING
+# ==============================================================================
+incremental_processing:
+  # Delta Lake settings
+  delta:
+    enable_versioning: true
+    track_versions: true
+    enable_time_travel: true
+    retention_period_hours: 168  # 7 days
+    
+  # Enhanced checkpoint settings
+  checkpoints:
+    table_name: "silver_layer.sales_delta_checkpoint"
+    track_by_version: true
+    track_by_timestamp: true
+    enable_metrics_tracking: true
+    
+  # Enhanced loading strategy
+  loading:
+    strategy: "append"  # Incremental append only
+    if_table_exists: "append"
+    enable_batch_processing: true
+    batch_size: 10000
+
+# ==============================================================================
+# ENHANCED POSTGRESQL SCHEMA CONFIGURATION
+# ==============================================================================
+postgresql_schema:
+  # Schema name
+  schema: "silver_layer"
+  
+  # Enhanced tables with new columns
+  tables:
+    sales_process_log: "silver_layer.sales_process_log"
+    sales_data_quality_log: "silver_layer.sales_data_quality_log"
+    sales_delta_checkpoint: "silver_layer.sales_delta_checkpoint"
+    
+    # Enhanced summarized tables
+    summarized_cash_invoices: "silver_layer.summarized_cash_invoices"
+    enhanced_columns:
+      summarized:
+        - "stg_vat_calculated"
+        - "stg_discount_percentage"
+        - "amount_invalid_flag"
+        - "date_invalid_flag"
+        - "customer_missing_flag"
+        - "is_credit_note"
+        - "original_document_number"
+        - "original_cus_code"
+        - "original_customer_name"
+        - "original_trn_date"
+        
+    generated_summarized_cash_invoices_credit_notes: "silver_layer.generated_summarized_cash_invoices_credit_notes"
+    enhanced_credit_columns:
+      summarized:
+        - "credit_calculated_total"
+    
+    # Enhanced detailed tables
+    detailed_cash_invoices: "silver_layer.detailed_cash_invoices"
+    enhanced_columns:
+      detailed:
+        - "calculated_line_total"
+        - "effective_amount"
+        - "line_discounted_product_unit_price"
+        - "net_line_amount"
+        - "amount_invalid_flag"
+        - "date_invalid_flag"
+        - "customer_missing_flag"
+        - "quantity_invalid_flag"
+        - "price_invalid_flag"
+        - "is_credit_note"
+        - "potential_duplicate_flag"
+        - "original_document_number"
+        - "original_item_code"
+        - "original_cus_code"
+        - "original_description"
+        
+    generated_detailed_cash_invoices_credit_notes: "silver_layer.generated_detailed_cash_invoices_credit_notes"
+    enhanced_credit_columns:
+      detailed:
+        - "credit_calculated_line_total"
+        
+    daily_sales_summary: "silver_layer.daily_sales_summary"
+    enhanced_summary_columns:
+      - "total_calculated_vat"
+      - "avg_discount_percentage"
+      - "total_calculated_line_amount"
+      - "avg_discounted_unit_price"
+      - "total_calculated_credits"
+
+# ==============================================================================
+# ENHANCED LOGGING CONFIGURATION
+# ==============================================================================
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  
+  # Enhanced file logging
+  file:
+    enabled: true
+    filename: "silver_transformer_delta_enhanced.log"
+    max_bytes: 10485760  # 10MB
+    backup_count: 5
+    enable_rotation: true
+    
+  # Console logging
+  console:
+    enabled: true
+    use_platform_safe_emojis: true  # Auto-detected based on OS
+    
+  # Enhanced metrics logging
+  metrics:
+    enabled: true
+    log_data_quality_metrics: true
+    log_business_calculations: true
+    log_schema_changes: true
+    log_performance_metrics: true
+
+# ==============================================================================
+# ENHANCED PERFORMANCE TUNING
+# ==============================================================================
+performance:
+  # Polars settings
+  polars:
+    use_lazy_evaluation: false
+    n_threads: null  # Auto-detect
+    enable_string_cache: true
+    
+  # Enhanced memory management
+  memory:
+    chunk_size: 100000
+    enable_garbage_collection: true
+    gc_threshold: 0.8  # Trigger GC at 80% memory usage
+    max_memory_mb: 4096  # 4GB max memory usage
+    
+  # Processing optimization
+  optimization:
+    enable_vectorized_operations: true
+    enable_parallel_processing: true
+    max_workers: 4
+    
+  # Database optimization
+  database:
+    batch_size: 1000
+    commit_frequency: 1000
+    enable_prepared_statements: true
+
+# ==============================================================================
+# ENHANCED ERROR HANDLING
+# ==============================================================================
+error_handling:
+  retry:
+    enabled: true
+    max_attempts: 3
+    backoff_factor: 2
+    max_delay_seconds: 60
+    
+  on_failure:
+    action: "log_and_continue"
+    rollback_on_error: true
+    enable_circuit_breaker: true
+    circuit_breaker_threshold: 5
+    
+  # Enhanced validation errors
+  validation:
+    strict_mode: false
+    skip_invalid_records: true
+    log_validation_errors: true
+    max_validation_errors: 100
+    
+  # Enhanced connection errors
+  connection:
+    reconnect_attempts: 3
+    connection_timeout: 30
+    query_timeout: 300
+
+# ==============================================================================
+# ENHANCED MONITORING AND ALERTING
+# ==============================================================================
+monitoring:
+  # Data quality monitoring
+  data_quality:
+    enabled: true
+    thresholds:
+      duplicate_records: 10
+      null_values: 5
+      validation_errors: 20
+      whitespace_issues: 50
+      
+  # Performance monitoring
+  performance:
+    enabled: true
+    thresholds:
+      processing_time_seconds: 300
+      memory_usage_mb: 2048
+      record_throughput: 1000
+      
+  # Business logic monitoring
+  business_logic:
+    enabled: true
+    thresholds:
+      vat_calculation_variance: 0.05  # 5%
+      discount_percentage_range: 50    # Max 50% discount
+      line_total_variance: 0.01        # 1%
+      
+  # Alerting
+  alerting:
+    enabled: false  # Set to true when alerting system is configured
+    channels:
+      - "log"
+      # - "email"  # Future enhancement
+      # - "slack"  # Future enhancement
+
+# ==============================================================================
+# BACKUP AND RECOVERY
+# ==============================================================================
+backup:
+  enabled: true
+  frequency: "daily"  # daily, weekly, monthly
+  retention_days: 30
+  tables_to_backup:
+    - "silver_layer.sales_process_log"
+    - "silver_layer.sales_data_quality_log"
+    - "silver_layer.sales_delta_checkpoint"
+
+# ==============================================================================
+# ENHANCED FEATURE TOGGLES
+# ==============================================================================
+feature_toggles:
+  # Experimental features
+  experimental:
+    enable_ai_anomaly_detection: false
+    enable_advanced_analytics: false
+    enable_real_time_processing: false
+    
+  # Business features
+  business:
+    enable_revenue_analytics: true
+    enable_customer_analytics: true
+    enable_product_analytics: true
+    
+  # Technical features
+  technical:
+    enable_advanced_partitioning: false
+    enable_columnar_storage: true
+    enable_compression: true
+
+# ==============================================================================
+# ENVIRONMENT SPECIFIC SETTINGS
+# ==============================================================================
+environment: "development"  # development, staging, production
+
+# Environment overrides
+environments:
+  development:
+    logging:
+      level: "DEBUG"
+    performance:
+      chunk_size: 10000
+    error_handling:
+      strict_mode: false
+      
+  staging:
+    logging:
+      level: "INFO"
+    performance:
+      chunk_size: 50000
+    error_handling:
+      strict_mode: true
+      
+  production:
+    logging:
+      level: "WARNING"
+    performance:
+      chunk_size: 100000
+    error_handling:
+      strict_mode: true
+    monitoring:
+      alerting:
+        enabled: true

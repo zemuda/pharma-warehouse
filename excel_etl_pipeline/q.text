@@ -1,0 +1,31 @@
+# Create claude_requirements.txt
+@"
+pyspark==3.5.0
+delta-spark==3.0.0
+psycopg2-binary==2.9.9
+pyyaml==6.0.1
+pandas==2.1.0
+pyarrow==14.0.1
+tabulate==0.9.0
+requests==2.31.0
+"@ | Out-File -FilePath claude_requirements.txt -Encoding UTF8
+
+# Install packages
+pip install -r claude_requirements.txt
+
+# Verify installation
+python -c "import pyspark; print(f'PySpark {pyspark.__version__} installed')"
+python -c "import delta; print('Delta Lake installed')"
+python -c "import requests; print('requests installed')"
+python -c "import yaml; print('yaml installed')"
+
+
+in silver layer sales cash invoices detailed check if AMT_EXCL == AMOUNT_VALUE. check if ITEM_PRICES, PWQTY, QUANTITY, AMT_EXCL, AMOUNT_VALUE, AMOUNT_INCLUSIVE, AMOUNT_EXCLUSIVE, AMOUNT is less than or equal to 0, flag is_credit_note
+VAT, BONUS, TAX_AMOUNT, DISCOUNT_PERCENT, DISCOUNT == 0
+if Deduplication flag
+if check does not pass flag it
+if date is not okay flag
+
+sales cash invoices summarized check if AMOUNT, 
+AMOUNT_INCLUSIVE, AMOUNT_EXCLUSIVE is less than or equal to 0, flag is_credit_note
+VAT, BONUS == 0

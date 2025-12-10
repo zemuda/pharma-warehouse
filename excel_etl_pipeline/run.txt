@@ -1,0 +1,3 @@
+python raw_layer/run_pipeline.py
+
+python bronze_layer/bronze_loader_polars.py --config bronze_layer/bronze_loader_config.yaml

@@ -1,0 +1,431 @@
+# bronze_loader_config.yaml
+# Production Bronze Layer Configuration
+
+# ==============================================================================
+# PATHS CONFIGURATION (Windows paths)
+# ==============================================================================
+paths:
+  # Use forward slashes or double backslashes for Windows
+  # Full paths recommended for Windows
+  bronze_base_path: "C:/pharma_warehouse/etl_pipeline/excel_pipeline/bronze_data/bronze"
+  source_data_path: "C:/pharma_warehouse/etl_pipeline/excel_pipeline/data/output"
+  log_directory: "C:/pharma_warehouse/etl_pipeline/excel_pipeline/bronze_data/logs"
+  checkpoint_directory: "C:/pharma_warehouse/etl_pipeline/excel_pipeline/bronze_data/checkpoints"
+  
+  # Alternative: Relative paths (if running from project root)
+  # bronze_base_path: "excel_pipeline/data/bronze"
+  # source_data_path: "excel_pipeline/data/output"
+  # log_directory: "excel_pipeline/data/logs"
+  # checkpoint_directory: "excel_pipeline/data/checkpoints"
+
+# ==============================================================================
+# POSTGRESQL CONFIGURATION
+# ==============================================================================
+postgresql:
+  host: "localhost"
+  port: 5432
+  database: "pharma_warehouse"
+  user: "postgres"
+  password: "1234"
+  schema: "bronze_layer"
+  connection_pool_size: 5
+  connection_timeout: 30
+
+# ==============================================================================
+# SPARK CONFIGURATION (Optimized for Windows)
+# ==============================================================================
+spark:
+  app_name: "ProductionBronzeLoader"
+  master: "local[*]"
+  
+  # Memory settings (adjust based on your system)
+  # For Windows, keep conservative to avoid memory issues
+  driver_memory: "2g"
+  executor_memory: "2g"
+  
+  # Performance tuning
+  shuffle_partitions: 4  # Lower for Windows
+  default_parallelism: 2
+  max_partition_bytes: "128MB"
+  
+  # Additional configs
+  additional_configs:
+    spark.sql.adaptive.enabled: "true"
+    spark.sql.adaptive.coalescePartitions.enabled: "true"
+    spark.sql.adaptive.skewJoin.enabled: "true"
+    spark.sql.adaptive.advisoryPartitionSizeInBytes: "64MB"
+    # Windows-specific: Avoid path issues
+    spark.sql.warehouse.dir: "C:/pharma_warehouse/etl_pipeline/excel_pipeline/bronze_data/spark-warehouse"
+
+# ==============================================================================
+# FEATURE FLAGS
+# ==============================================================================
+features:
+  # Enable SCD Type 2 (Historical Tracking)
+  enable_scd2: true
+  
+  # Enable per-column quality checks
+  enable_quality_columns: false
+  
+  # Enable Z-ORDER optimization
+  enable_zorder: false
+  
+  # Enable data validation rules
+  enable_validation: false
+  
+  # Enable anomaly detection
+  enable_anomaly_detection: false
+  
+  # Enable auto-healing for data issues
+  enable_auto_healing: false
+
+# ==============================================================================
+# DATA SOURCES CONFIGURATION
+# ==============================================================================
+data_sources:
+  features:
+    - name: "sales"
+      enabled: true
+      file_pattern: "*.parquet"
+      subfeatures:
+        - name: "cash_invoices"
+          enabled: true
+          data_types:
+            - name: "detailed"
+              enabled: true
+              path: "sales/cash_invoices/detailed"
+            - name: "summarized" 
+              enabled: true
+              path: "sales/cash_invoices/summarized"
+
+        - name: "cash_sales" 
+          enabled: false
+        - name: "credit_notes"
+          enabled: false
+        - name: "quotation"
+          enabled: false
+      
+    - name: "purchases"
+      enabled: false
+      file_pattern: "*.parquet"
+      
+    - name: "inventory"
+      enabled: false
+      file_pattern: "*.parquet"
+
+# ==============================================================================
+# DATA VALIDATION RULES
+# ==============================================================================
+validation_rules:
+  # Global rules applied to all tables
+  global:
+    - rule_type: "null_check"
+      max_null_percentage: 10.0
+      severity: "warning"
+      
+    - rule_type: "duplicate_check"
+      severity: "error"
+      
+    - rule_type: "freshness_check"
+      max_age_days: 7
+      severity: "warning"
+  
+  # Table-specific rules
+  tables:
+    sales:
+      - rule_type: "range_check"
+        columns: ["amount", "quantity"]
+        min_value: 0
+        severity: "error"
+        
+      - rule_type: "format_check"
+        columns: ["email"]
+        pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+        severity: "warning"
+        
+      - rule_type: "referential_integrity"
+        column: "customer_id"
+        reference_table: "customers"
+        severity: "error"
+    
+    inventory:
+      - rule_type: "range_check"
+        columns: ["stock_quantity"]
+        min_value: 0
+        max_value: 100000
+        severity: "error"
+
+# ==============================================================================
+# ANOMALY DETECTION CONFIGURATION
+# ==============================================================================
+anomaly_detection:
+  enabled: true
+  
+  # Statistical anomaly detection
+  statistical:
+    enabled: true
+    method: "zscore"  # Options: zscore, iqr, isolation_forest
+    threshold: 3.0
+    columns_to_check: ["amount", "quantity", "price"]
+  
+  # Volume anomaly detection
+  volume:
+    enabled: true
+    expected_records_min: 100
+    expected_records_max: 1000000
+    deviation_threshold: 0.5  # 50% deviation triggers alert
+  
+  # Pattern anomaly detection
+  pattern:
+    enabled: true
+    check_seasonality: true
+    check_trends: true
+
+# ==============================================================================
+# OPTIMIZATION SETTINGS
+# ==============================================================================
+optimization:
+  # Z-ORDER settings
+  zorder:
+    enabled: true
+    max_columns: 5
+    auto_select_columns: true
+    frequency: "daily"  # Options: always, daily, weekly, monthly
+    
+  # Compaction settings
+  compaction:
+    enabled: true
+    target_file_size_mb: 128
+    min_file_size_mb: 10
+    
+  # Vacuum settings
+  vacuum:
+    enabled: true
+    retention_hours: 168  # 7 days
+    
+  # Auto-optimize
+  auto_optimize:
+    enabled: true
+    optimize_write: true
+    auto_compact: true
+
+# ==============================================================================
+# QUALITY THRESHOLDS
+# ==============================================================================
+quality_thresholds:
+  # Minimum acceptable quality score (0.0 - 1.0)
+  min_quality_score: 0.85
+  
+  # Maximum null percentage per column
+  max_null_percentage: 15.0
+  
+  # Maximum duplicate percentage
+  max_duplicate_percentage: 5.0
+  
+  # Fail load if quality below threshold
+  fail_on_quality_breach: false
+  
+  # Alert on quality breach
+  alert_on_quality_breach: true
+
+# ==============================================================================
+# INCREMENTAL LOADING SETTINGS
+# ==============================================================================
+incremental_loading:
+  enabled: true
+  
+  # Skip already processed files
+  skip_processed_files: true
+  
+  # Reprocess files if modified
+  reprocess_on_modification: true
+  
+  # Checkpoint frequency
+  checkpoint_frequency: 100  # Checkpoint every N files
+
+# ==============================================================================
+# NOTIFICATION SETTINGS
+# ==============================================================================
+notifications:
+  enabled: false  # Set to true when you configure email/slack
+  
+  # Email notifications
+  email:
+    enabled: false
+    smtp_host: "smtp.gmail.com"
+    smtp_port: 587
+    smtp_user: "your_email@example.com"
+    smtp_password: "your_app_password"
+    from_address: "bronze-loader@example.com"
+    to_addresses:
+      - "data-team@example.com"
+    notify_on:
+      - "failure"
+      - "quality_breach"
+      - "schema_change"
+  
+  # Slack notifications
+  slack:
+    enabled: false
+    webhook_url: "https://hooks.slack.com/services/YOUR/WEBHOOK/URL"
+    channel: "#data-pipeline"
+    notify_on:
+      - "failure"
+      - "completion"
+      - "quality_breach"
+      - "schema_change"
+  
+  # Microsoft Teams notifications
+  teams:
+    enabled: false
+    webhook_url: "https://outlook.office.com/webhook/YOUR/WEBHOOK/URL"
+    notify_on:
+      - "failure"
+      - "quality_breach"
+
+# ==============================================================================
+# LOGGING CONFIGURATION
+# ==============================================================================
+logging:
+  level: "INFO"  # Options: DEBUG, INFO, WARNING, ERROR, CRITICAL
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  
+  # File logging
+  file:
+    enabled: true
+    filename: "bronze_loader_production.log"
+    max_bytes: 10485760  # 10MB
+    backup_count: 5
+    
+  # Console logging
+  console:
+    enabled: true
+    colored: false  # Set to false on Windows if colors don't work
+    
+  # Detailed logging for debugging
+  detailed_logging:
+    enabled: false
+    log_dataframe_samples: false
+    sample_size: 10
+
+# ==============================================================================
+# MONITORING & METRICS
+# ==============================================================================
+monitoring:
+  enabled: true
+  
+  # Prometheus metrics
+  prometheus:
+    enabled: false
+    port: 9090
+    
+  # Dashboard refresh interval
+  dashboard_refresh_seconds: 60
+  
+  # Metrics to track
+  metrics:
+    - "records_processed"
+    - "processing_time"
+    - "quality_score"
+    - "file_count"
+    - "error_count"
+    - "schema_changes"
+
+# ==============================================================================
+# RETRY & ERROR HANDLING
+# ==============================================================================
+error_handling:
+  # Retry failed files
+  retry_enabled: true
+  max_retries: 3
+  retry_delay_seconds: 60
+  exponential_backoff: true
+  
+  # Continue on error
+  continue_on_error: true
+  
+  # Quarantine bad files
+  quarantine_enabled: true
+  quarantine_path: "C:/pharma_warehouse/etl_pipeline/excel_pipeline/bronze_data/quarantine"
+  
+  # Dead letter queue
+  dlq_enabled: true
+  dlq_path: "C:/pharma_warehouse/etl_pipeline/excel_pipeline/bronze_data/dead_letter_queue"
+
+# ==============================================================================
+# PERFORMANCE TUNING (Windows Optimized)
+# ==============================================================================
+performance:
+  # Parallel file processing
+  parallel_processing:
+    enabled: true
+    max_workers: 2  # Lower for Windows
+    
+  # Batch size for processing
+  batch_size: 50  # Lower for Windows
+  
+  # Memory limits
+  max_memory_per_file_mb: 256  # Conservative for Windows
+  
+  # Cache settings
+  cache_enabled: true
+  cache_size_mb: 512  # Lower for Windows
+
+# ==============================================================================
+# SECURITY SETTINGS
+# ==============================================================================
+security:
+  # Encrypt sensitive data
+  encryption_enabled: false
+  encryption_key_path: "C:/pharma_warehouse/etl_pipeline/keys/encryption.key"
+  
+  # Mask PII columns
+  pii_masking:
+    enabled: false
+    columns_to_mask:
+      - "email"
+      - "phone"
+      - "ssn"
+    masking_method: "sha256"  # Options: sha256, partial, tokenize
+  
+  # Audit logging
+  audit_logging:
+    enabled: true
+    log_data_access: true
+    log_schema_changes: true
+
+# ==============================================================================
+# MAINTENANCE SETTINGS
+# ==============================================================================
+maintenance:
+  # Auto-cleanup old logs
+  cleanup_logs:
+    enabled: true
+    retention_days: 30
+    
+  # Auto-cleanup old checkpoints
+  cleanup_checkpoints:
+    enabled: true
+    retention_days: 7
+    
+  # Auto-vacuum Delta tables
+  auto_vacuum:
+    enabled: true
+    schedule: "0 2 * * 0"  # Every Sunday at 2 AM (cron format)
+
+# ==============================================================================
+# TESTING & DEVELOPMENT
+# ==============================================================================
+development:
+  # Dry run mode (no actual writes)
+  dry_run: false
+  
+  # Test mode (use sample data)
+  test_mode: false
+  test_sample_size: 1000
+  
+  # Debug mode
+  debug_mode: false
+  
+  # Profile performance
+  profiling_enabled: false

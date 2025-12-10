@@ -1,0 +1,65 @@
+# 1. Install dependencies
+pip install -r requirements_complete.txt
+
+# 2. Update config paths for your environment
+
+# 3. Run the complete bronze layer
+python bronze_layer_complete.py
+
+# 4. Run with vacuum cleanup
+python bronze_layer_complete.py --vacuum
+
+# 5. Get table information
+python bronze_layer_complete.py --info bronze_sales_cash_invoices_detailed
+
+# 6. Clone a table
+python bronze_layer_complete.py --clone bronze_sales_detailed bronze_sales_detailed_test
+
+✅ ALL DELTA FEATURES IMPLEMENTED:
+Core Delta:
+✅ Schema Evolution - Auto-handle schema changes
+
+✅ Time Travel - 90-day audit trail
+
+✅ ACID Transactions - Data integrity
+
+✅ Delta Format - Transaction log, versioning
+
+SCD2 & Change Tracking:
+✅ SCD2 Type 1/2/3 - Full change tracking
+
+✅ Change Data Feed - CDC tracking
+
+✅ Data Lineage - Provenance tracking
+
+Performance:
+✅ Partitioning - By date/columns
+
+✅ Z-Ordering - Query optimization
+
+✅ Data Skipping - Auto statistics
+
+✅ Bloom Filters - Faster lookups
+
+✅ Optimization - File compaction
+
+Data Quality:
+✅ Constraints (optional) - Data validation
+
+✅ Data Quality Rules - Validation rules
+
+✅ Schema Validation - Type checking
+
+Advanced Features:
+✅ Generated Columns - Computed columns
+
+✅ Table Cloning - Deep/shallow clones
+
+✅ Vacuum - Storage cleanup
+
+Incremental Loading:
+✅ Checkpoint System - Track processed files
+
+✅ Watermark Columns - Filter by timestamp
+
+✅ File ModTime Tracking - Only new files

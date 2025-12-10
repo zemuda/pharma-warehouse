@@ -1,0 +1,39 @@
+# config.py
+import os
+from pathlib import Path
+
+# Base paths
+BASE_DIR = Path("C:/pharma_warehouse/excel_etl_pipeline/excel_pipeline")
+BRONZE_DATA_DIR = BASE_DIR / "bronze_data" / "bronze" / "tables"
+
+# Delta table paths
+DELTA_PATHS = {
+    "summarized_cash_invoices": BRONZE_DATA_DIR / "bronze_sales_cash_invoices_summarized",
+    "detailed_cash_invoices": BRONZE_DATA_DIR / "bronze_sales_cash_invoices_detailed"
+}
+
+# ==============================================================================
+# POSTGRESQL CONFIGURATION
+# ==============================================================================
+postgresql:
+  host: "localhost"
+  port: 5432
+  database: "pharma_warehouse"
+  user: "postgres"
+  password: "1234"
+  schema: "silver_layer"
+  connection_pool_size: 5
+  connection_timeout: 30
+
+# Silver layer configuration
+SILVER_CONFIG = {
+    "schema": "silver_sales",
+    "incremental_field": "bronze_load_timestamp",
+    "watermark_table": "silver_sales.processing_watermarks"
+}
+
+# Processing configuration
+PROCESSING_CONFIG = {
+    "batch_size": 10000,
+    "max_workers": 4
+}

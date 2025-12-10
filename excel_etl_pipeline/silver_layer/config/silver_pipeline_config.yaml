@@ -1,0 +1,106 @@
+# pipeline_config.yaml
+pipeline:
+  name: "Enhanced Silver Layer Pipeline"
+  version: "3.0.0"
+  environment: "production"
+
+paths:
+  bronze_base: "C:/pharma_warehouse/excel_etl_pipeline/bronze_layer/bronze_data/bronze/tables"
+  silver_delta_base: "C:/pharma_warehouse/excel_etl_pipeline/silver_layer/silver_data/silver_data_delta"
+  checkpoint_base: "C:/pharma_warehouse/excel_etl_pipeline/silver_layer/silver_data/checkpoints/silver"
+  reports_base: "C:/pharma_warehouse/excel_etl_pipeline/silver_layer/silver_data/reports"
+
+database:
+  postgresql:
+    host: "localhost"
+    port: 5432
+    database: "pharma_warehouse"
+    user: "postgres"
+    password: "1234"
+    schema: "silver_layer"
+    
+processing:
+  batch_size: 100000
+  enable_incremental: true
+  enable_parallel_processing: false  # Set true for multi-threading
+  
+features:
+  separate_table_processing: true
+  comprehensive_validation: true
+  column_standardization: true
+  invoice_reconciliation: true
+  credit_note_processing: true
+  metadata_optimization: true
+  
+data_quality:
+  strict_mode: false  # Set true to fail pipeline on validation errors
+  enable_quality_logging: true
+  min_quality_score: 80.0
+  
+  checks:
+    - required_fields
+    - positive_amounts
+    - valid_dates
+    - no_duplicates
+    - amount_reconciliation
+    - foreign_key_integrity
+    
+bronze_metadata:
+  keep_columns:
+    - _source_file_path
+    - _processed_at
+    - _data_hash
+    - _ingestion_date
+  
+  rename_mapping:
+    _processed_at: _raw_processed_at
+    _data_hash: _bronze_data_hash
+    _ingestion_date: _bronze_ingestion_date
+    _source_file_path: _bronze_source_file_path
+  
+  drop_columns:
+    - _source_sheet
+    - _source_file_name
+    - _data_granularity
+    - _valid_from
+    - _valid_to
+    - _is_current
+    - _record_version
+    - _load_timestamp
+
+silver_metadata:
+  add_columns:
+    - _silver_processed_at
+    - _silver_batch_id
+    - _silver_valid_from
+    - _silver_valid_to
+    - _silver_is_current
+    - _silver_record_version
+    - _silver_data_quality_score
+    - _silver_processing_duration_ms
+
+table_mapping:
+  summarized_invoice:
+    bronze_pattern: "*summarized*cash*invoice*"
+    silver_table: "cash_invoice_summary"
+    delta_path: "sales/cash_invoices/summarized"
+    
+  detailed_invoice:
+    bronze_pattern: "*detailed*cash*invoice*"
+    silver_table: "cash_invoice_detail"
+    delta_path: "sales/cash_invoices/detailed"
+    
+  credit_note_summary:
+    bronze_pattern: "*credit*note*summary*"
+    silver_table: "credit_note_summary"
+    delta_path: "sales/credit_notes/summarized"
+    
+  credit_note_detail:
+    bronze_pattern: "*credit*note*detail*"
+    silver_table: "credit_note_detail"
+    delta_path: "sales/credit_notes/detailed"
+
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "silver_pipeline.log"

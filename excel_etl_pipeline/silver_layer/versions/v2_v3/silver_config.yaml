@@ -1,0 +1,171 @@
+# silver_config_complete.yaml
+# Complete Silver Layer Configuration
+
+# ==============================================================================
+# PATHS CONFIGURATION
+# ==============================================================================
+paths:
+  bronze_base_path: "C:/pharma_warehouse/excel_etl_pipeline/bronze_layer/bronze_data/bronze"
+  silver_base_path: "C:/pharma_warehouse/excel_etl_pipeline/excel_pipeline/silver_data"
+  log_directory: "C:/pharma_warehouse/excel_etl_pipeline/excel_pipeline/silver_data/logs"
+
+# ==============================================================================
+# POSTGRESQL CONFIGURATION
+# ==============================================================================
+postgresql:
+  host: "localhost"
+  port: 5432
+  database: "pharma_warehouse"
+  user: "postgres"
+  password: "1234"
+  schema: "silver_layer"
+
+# ==============================================================================
+# DATA SOURCES CONFIGURATION
+# ==============================================================================
+data_sources:
+  features:
+    - name: "sales"
+      enabled: true
+      subfeatures:
+        - name: "cash_invoices"
+          enabled: true
+          data_types:
+            - name: "detailed"
+              enabled: true
+              primary_keys: ["DOCUMENT_NUMBER", "ITEM_CODE", "BCODE"]
+              critical_columns: ["DOCUMENT_NUMBER", "TRN_DATE", "AMOUNT", "CUS_CODE"]
+              cleaning_rules:
+                trim_whitespace: true
+                null_handling:
+                  DOCUMENT_NUMBER: "drop"
+                  TRN_DATE: "1900-01-01"
+                  AMOUNT: 0
+                type_conversions:
+                  TRN_DATE: "date"
+                  AMOUNT: "numeric"
+                  AMOUNT_INCLUSIVE: "numeric"
+                  AMOUNT_EXCLUSIVE: "numeric"
+                  
+            - name: "summarized"
+              enabled: true
+              primary_keys: ["DOCUMENT_NUMBER"]
+              critical_columns: ["DOCUMENT_NUMBER", "TRN_DATE", "AMOUNT", "CUS_CODE"]
+              cleaning_rules:
+                trim_whitespace: true
+                null_handling:
+                  DOCUMENT_NUMBER: "drop"
+                  TRN_DATE: "1900-01-01"
+                  AMOUNT: 0
+                type_conversions:
+                  TRN_DATE: "date"
+                  AMOUNT: "numeric"
+                  AMOUNT_INCLUSIVE: "numeric"
+                  AMOUNT_EXCLUSIVE: "numeric"
+        
+        - name: "cash_sales"
+          enabled: true
+          data_types:
+            - name: "detailed"
+              enabled: true
+              primary_keys: ["DOCUMENT_NUMBER", "ITEM_CODE"]
+            - name: "summarized"
+              enabled: true
+              primary_keys: ["DOCUMENT_NUMBER"]
+              
+        - name: "credit_notes"
+          enabled: true
+          data_types:
+            - name: "detailed"
+              enabled: true
+              primary_keys: ["DOCUMENT_NUMBER", "ITEM_CODE"]
+            - name: "summarized"
+              enabled: true
+              primary_keys: ["DOCUMENT_NUMBER"]
+              
+        - name: "quotations"
+          enabled: true
+          data_types:
+            - name: "detailed"
+              enabled: true
+              primary_keys: ["DOCUMENT_NUMBER", "ITEM_CODE"]
+            - name: "summarized"
+              enabled: true
+              primary_keys: ["DOCUMENT_NUMBER"]
+
+    - name: "purchases"
+      enabled: true
+      subfeatures:
+        - name: "purchase_invoices"
+          enabled: true
+          data_types:
+            - name: "detailed"
+              enabled: true
+            - name: "summarized"
+              enabled: true
+
+    - name: "inventory"
+      enabled: true
+      subfeatures:
+        - name: "stock_transfers"
+          enabled: true
+          data_types:
+            - name: "detailed"
+              enabled: true
+            - name: "summarized"
+              enabled: true
+
+    - name: "master_data"
+      enabled: true
+      subfeatures:
+        - name: "products"
+          enabled: true
+          data_types:
+            - name: "items"
+              enabled: true
+        - name: "customers"
+          enabled: true
+          data_types:
+            - name: "customer_master"
+              enabled: true
+        - name: "suppliers"
+          enabled: true
+          data_types:
+            - name: "supplier_master"
+              enabled: true
+
+# ==============================================================================
+# CLEANING RULES
+# ==============================================================================
+cleaning_rules:
+  default:
+    trim_whitespace: true
+    remove_duplicates: true
+    validate_dates: true
+    validate_numerics: true
+    
+  sales_specific:
+    validate_positive_amounts: true
+    validate_document_numbers: true
+    standardize_customer_codes: true
+
+# ==============================================================================
+# DATA QUALITY THRESHOLDS
+# ==============================================================================
+data_quality:
+  min_quality_score: 95.0
+  max_null_percentage: 5.0
+  max_duplicate_percentage: 2.0
+  critical_column_completeness: 98.0
+
+# ==============================================================================
+# LOGGING CONFIGURATION
+# ==============================================================================
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file:
+    enabled: true
+    filename: "silver_transformer_complete.log"
+    max_bytes: 10485760
+    backup_count: 5

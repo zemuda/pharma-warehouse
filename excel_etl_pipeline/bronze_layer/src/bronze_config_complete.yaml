@@ -1,0 +1,363 @@
+# bronze_config_complete.yaml
+# COMPLETE Bronze Layer Configuration with ALL Delta Features
+
+# ==============================================================================
+# PATHS CONFIGURATION
+# ==============================================================================
+paths:
+  bronze_base_path: "C:/pharma_warehouse/excel_etl_pipeline/bronze_layer/bronze_data/bronze"
+  source_data_path: "C:/pharma_warehouse/excel_etl_pipeline/raw_layer/raw_data/output"
+  log_directory: "C:/pharma_warehouse/excel_etl_pipeline/bronze_layer/bronze_data/logs"
+  checkpoint_directory: "C:/pharma_warehouse/excel_etl_pipeline/bronze_layer/bronze_data/checkpoints"
+  temp_directory: "C:/pharma_warehouse/excel_etl_pipeline/bronze_layer/bronze_data/temp"
+
+# ==============================================================================
+# DELTA LAKE FEATURES - ALL FEATURES CONFIGURED
+# ==============================================================================
+delta_features:
+  # ✅ CORE FEATURES (Always enabled for Bronze)
+  schema_evolution:
+    enabled: true
+    mode: "merge"  # merge, overwrite, fail
+    auto_add_columns: true
+    allow_type_promotion: true
+    
+  time_travel:
+    enabled: true
+    retention_days: 90  # Keep 90 days of history
+    max_versions: 100   # Maximum versions to keep
+    
+  acid_transactions:
+    enabled: true  # Auto-enabled by Delta
+    
+  # ✅ INCREMENTAL LOADING
+  incremental_loading:
+    enabled: true
+    checkpoint_enabled: true
+    lookback_days: 7  # Process files from last 7 days if checkpoint missing
+    
+  # ✅ SCD2
+  scd2:
+    enabled: true
+    default_type: "type2"  # type1, type2, type3
+    hash_algorithm: "SHA256"
+    
+  # ✅ PERFORMANCE FEATURES
+  partitioning:
+    enabled: true
+    default_columns: ["_bronze_ingestion_date"]
+    auto_detect: true
+    
+  optimize:
+    enabled: true
+    frequency: "weekly"  # daily, weekly, monthly
+    zordering_enabled: true
+    compaction_enabled: true
+    target_file_size_mb: 128
+    
+  data_skipping:
+    enabled: true  # Auto-enabled by Delta
+    indexed_columns: 15
+    
+  bloom_filters:
+    enabled: true
+    auto_create: false
+    false_positive_rate: 0.01
+    
+  # ✅ DATA QUALITY & GOVERNANCE
+  data_quality:
+    enabled: true
+    validation_mode: "warn"  # warn, reject, ignore
+    
+  constraints:
+    enabled: false  # Typically disabled for Bronze
+    mode: "warn"    # warn, enforce
+    
+  data_lineage:
+    enabled: true
+    capture_source_info: true
+    capture_processing_info: true
+    
+  # ✅ CDC & CHANGE TRACKING
+  change_data_feed:
+    enabled: true
+    retention_days: 90
+    
+  # ✅ ADVANCED FEATURES
+  generated_columns:
+    enabled: false  # Typically disabled for Bronze
+    mode: "compute_on_write"
+    
+  table_cloning:
+    enabled: true
+    default_mode: "deep"  # deep, shallow
+    
+  # ✅ MAINTENANCE
+  vacuum:
+    enabled: true
+    retention_hours: 720  # 30 days
+    dry_run: false
+
+# ==============================================================================
+# INCREMENTAL LOADING CONFIGURATION
+# ==============================================================================
+incremental:
+  enabled: true
+  strategy: "file_modtime"  # file_modtime, watermark, hybrid
+  checkpoint_enabled: true
+  
+  watermark:
+    enabled: true
+    default_column: "TRN_DATE"
+    timestamp_format: "ISO"
+    
+  file_discovery:
+    pattern: "**/*.parquet"
+    recursive: true
+    follow_symlinks: false
+    
+  performance:
+    batch_size: 10000
+    max_files_per_run: 100
+    parallel_reads: 4
+
+# ==============================================================================
+# SCD2 CONFIGURATION
+# ==============================================================================
+scd2:
+  enabled: true
+  default_type: "type2"
+  
+  metadata_columns:
+    valid_from: "_bronze_valid_from"
+    valid_to: "_bronze_valid_to"
+    is_current: "_bronze_is_current"
+    record_version: "_bronze_record_version"
+    load_timestamp: "_bronze_load_timestamp"
+    data_hash: "_bronze_data_hash"
+    load_id: "_bronze_load_id"
+    ingestion_date: "_bronze_ingestion_date"
+  
+  hash_configuration:
+    algorithm: "SHA256"
+    columns_mode: "all_business"  # all_business, configured, exclude_metadata
+    exclude_prefixes: ["_bronze_", "_source_", "_raw_"]
+  
+  merge_behavior:
+    enabled: true
+    concurrent_writes: true
+    max_retries: 3
+    fallback_strategy: "append"  # append, stop, skip_batch
+
+# ==============================================================================
+# DATA SOURCES WITH COMPLETE CONFIGURATION
+# ==============================================================================
+data_sources:
+  features:
+    - name: "sales"
+      enabled: true
+      description: "Sales transactions data"
+      subfeatures:
+        - name: "cash_invoices"
+          enabled: true
+          description: "Cash invoice transactions"
+          data_types:
+            - name: "detailed"
+              enabled: true
+              path: "sales/cash_invoices/detailed"
+              
+              # Primary keys for SCD2
+              primary_keys: ["DOCUMENT_NUMBER", "CUS_CODE", "ITEM_CODE"]
+              
+              # SCD2 Configuration
+              scd2_type: "type2"
+              enable_scd2: true
+              hash_columns: ["AMOUNT", "QUANTITY", "ITEM_PRICE", "DESCRIPTION", 
+                           "VAT", "DISC", "AMOUNT_INCLUSIVE", "AMOUNT_EXCLUSIVE"]
+              
+              # Load Strategy
+              load_strategy: "incremental"
+              watermark_column: "TRN_DATE"
+              
+              # Delta Features
+              partition_columns: ["TRN_YEAR", "TRN_MONTH", "_bronze_ingestion_date"]
+              zorder_columns: ["TRN_DATE", "DOCUMENT_NUMBER", "CUS_CODE", "ITEM_CODE"]
+              bloom_filter_columns: ["DOCUMENT_NUMBER", "CUS_CODE", "ITEM_CODE"]
+              
+              # Generated Columns
+              # generated_columns:
+              #   year_month: "year_month"
+              #   amount_per_unit: "amount_per_unit"
+              #   is_cash: "TRN_TYPE == 'CIV'"
+              
+              # Constraints (warning only for Bronze)
+              constraints:
+                - name: "amount_positive"
+                  condition: "AMOUNT >= 0"
+                - name: "quantity_positive"
+                  condition: "QUANTITY > 0"
+              
+              # Quality Rules
+              quality_rules:
+                not_null_doc:
+                  type: "not_null"
+                  column: "DOCUMENT_NUMBER"
+                  max_null: 0
+                amount_range:
+                  type: "value_range"
+                  column: "AMOUNT"
+                  min: 0
+                  max: 1000000
+              
+              # Performance
+              read_columns: null  # null = read all columns
+              type_mapping:
+                TRN_DATE: "datetime"
+                AMOUNT: "numeric"
+                QUANTITY: "numeric"
+              
+              expected_columns:
+                - "DOCUMENT_NUMBER"
+                - "TRN_DATE"
+                - "AMOUNT"
+                - "CUS_CODE"
+                - "ITEM_CODE"
+              
+            - name: "summarized"
+              enabled: true
+              path: "sales/cash_invoices/summarized"
+              primary_keys: ["DOCUMENT_NUMBER"]
+              scd2_type: "type2"
+              enable_scd2: true
+              load_strategy: "incremental"
+              watermark_column: "TRN_DATE"
+              partition_columns: ["TRN_YEAR", "TRN_MONTH"]
+              zorder_columns: ["TRN_DATE", "CUS_CODE"]
+              # generated_columns:
+              #   year_month: "year_month"
+              #   is_cash: "true"
+    
+    - name: "master_data"
+      enabled: true
+      description: "Master/reference data"
+      subfeatures:
+        - name: "customer_accounts"
+          enabled: true
+          description: "Customer master data"
+          data_types:
+            - name: "all_branches"
+              enabled: true
+              path: "master_data/customer_accounts/all_branches"
+              primary_keys: ["CORP_CODE"]
+              scd2_type: "type2"
+              enable_scd2: true
+              load_strategy: "merge"  # Master data uses merge strategy
+              partition_columns: []  # Don't partition small tables
+              zorder_columns: ["CORP_CODE"]
+              quality_rules:
+                not_null_corp:
+                  type: "not_null"
+                  column: "CORP_CODE"
+                  max_null: 0
+                valid_corp_type:
+                  type: "allowed_values"
+                  column: "CORP_TYPE"
+                  values: ["PHARMACY", "HOSPITALS", "CLINIC", "OTHER"]
+
+# ==============================================================================
+# PERFORMANCE CONFIGURATION
+# ==============================================================================
+performance:
+  memory:
+    max_memory_mb: 4096
+    spill_to_disk_threshold_mb: 1024
+    
+  processing:
+    chunk_size: 50000
+    parallel_reads: 4
+    use_streaming: false
+    
+  delta:
+    max_partition_bytes: 134217728  # 128MB
+    min_rows_per_group: 10000
+    max_rows_per_group: 100000
+    
+  optimization:
+    optimize_dtypes: true
+    remove_duplicates: false
+    cache_intermediate: true
+
+# ==============================================================================
+# MONITORING & LOGGING
+# ==============================================================================
+monitoring:
+  enable_metrics: true
+  metrics_interval: 60  # seconds
+  
+  metrics_to_collect:
+    - load_duration_seconds
+    - rows_processed
+    - files_processed
+    - insert_count
+    - update_count
+    - expire_count
+    - memory_usage_mb
+    - checkpoint_age_days
+    
+  alerting:
+    enabled: false
+    checkpoint_stale_days: 3
+    load_failure_threshold: 3
+    memory_threshold_mb: 3500
+    
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  
+  file_rotation:
+    max_bytes: 10485760  # 10MB
+    backup_count: 5
+    
+  delta_logging:
+    enabled: true
+    log_operations: true
+    log_file_sizes: true
+    log_schema_changes: true
+
+# ==============================================================================
+# ERROR HANDLING & RECOVERY
+# ==============================================================================
+error_handling:
+  on_failure: "continue"  # continue, stop, skip_table
+  max_retries: 3
+  retry_delay_seconds: 5
+  
+  recovery:
+    enabled: true
+    checkpoint_backup: true
+    auto_recover: true
+    recovery_mode: "last_success"  # last_success, specific_checkpoint
+    
+  notifications:
+    enabled: false
+    email_on_failure: false
+    email_on_completion: false
+
+# ==============================================================================
+# SECURITY (Typically for Silver/Gold, but configured)
+# ==============================================================================
+security:
+  row_level_security:
+    enabled: false  # Bronze doesn't need RLS
+    
+  column_masking:
+    enabled: false  # Bronze stores raw data
+    
+  encryption:
+    enabled: false
+    encryption_type: "sse_s3"  # sse_s3, sse_kms, cse
+    
+  audit_logging:
+    enabled: true
+    log_all_operations: true
+    retention_days: 365

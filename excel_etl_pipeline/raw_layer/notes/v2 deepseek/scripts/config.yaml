@@ -1,0 +1,31 @@
+# config.yaml
+database:
+  host: localhost
+  port: 5432
+  name: pharma_warehouse
+  user: postgres
+  password: 1234
+  raw_layer_schema: raw_layer
+  bronze_layer_schema: bronze_layer
+
+raw_layer:
+  input_dir: C:/pharma_warehouse/excel_etl_pipeline/raw_layer/raw_data/input
+  output_dir: C:/pharma_warehouse/excel_etl_pipeline/raw_layer/raw_data/output
+  state_file: C:/pharma_warehouse/excel_etl_pipeline/raw_layer/raw_data/state/processing_state.json
+  
+pipeline:
+  log_level: INFO
+  clean_orphaned: true
+  show_logs: true
+  log_limit: 10
+  file_pattern: "*.xls"
+  
+file_watcher:
+  watch_dir: C:/pharma_warehouse/excel_etl_pipeline/raw_layer/raw_data/input
+  pipeline_container: excel-parquet-pipeline
+  processing_delay: 30
+
+paths:
+  project_root: C:/pharma_warehouse/excel_etl_pipeline
+  raw_layer_src: C:/pharma_warehouse/excel_etl_pipeline/raw_layer/src
+  raw_data: C:/pharma_warehouse/excel_etl_pipeline/raw_layer/raw_data
